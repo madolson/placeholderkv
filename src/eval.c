@@ -29,7 +29,8 @@
 
 /*
  * This file initializes the global LUA object and registers functions to call Valkey API from within the LUA language. 
- * It heavily invokes LUA's C API documented at https://www.lua.org/pil/24.html. There are 2 entrypoint functions in this file: 
+ * It heavily invokes LUA's C API documented at https://www.lua.org/pil/24.html. There are 2 entrypoint functions in
+ * this file:
  * 1. evalCommand() - Gets invoked every time a user runs LUA script via eval command on Valkey. 
  * 2. scriptingInit() - initServer() function from server.c invokes this to initialize LUA at startup. 
  *                      It is also invoked between 2 eval invocations to reset Lua. 
@@ -207,7 +208,8 @@ void scriptingInit(int setup) {
 
     luaRegisterServerAPI(lua);
 
-    /* register debug commands. we only need to add it under 'server' as 'redis' is effectively aliased to 'server' table at this point. */
+    /* register debug commands. we only need to add it under 'server' as 'redis' is effectively aliased to 'server'
+     * table at this point. */
     lua_getglobal(lua,"server");
 
     /* server.breakpoint */
@@ -250,6 +252,9 @@ void scriptingInit(int setup) {
                                 "end\n";
         luaL_loadbuffer(lua,errh_func,strlen(errh_func),"@err_handler_def");
         lua_pcall(lua,0,0,0);
+        /* Duplicate the function with __redis__err_handler name for backwards compatibility */
+        lua_getglobal(lua,"__server__err__handler");
+        lua_setglobal(lua,"__redis__err__handler");
     }
 
     /* Create the (non connected) client that we use to execute server commands
@@ -1678,7 +1683,7 @@ ldbLog(sdsnew("                     next line of code."));
             luaError(lua);
         } else if (argc > 1 &&
                    (!strcasecmp(argv[0],"r") || !strcasecmp(argv[0],REDIS_API_NAME) || !strcasecmp(argv[0],SERVER_API_NAME))) {
-            ldbRedis(lua,argv,argc);
+            ldbServer(lua,argv,argc);
             ldbSendLogs();
         } else if ((!strcasecmp(argv[0],"p") || !strcasecmp(argv[0],"print"))) {
             if (argc == 2)
