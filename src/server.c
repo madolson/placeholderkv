@@ -2775,7 +2775,9 @@ void initServer(void) {
         server.maxmemory_policy = MAXMEMORY_NO_EVICTION;
     }
 
+    /* Initialize the LUA scripting engine. */ 
     scriptingInit(1);
+    /* Initialize the functions engine based off of LUA initialization. */ 
     if (functionsInit() == C_ERR) {
         serverPanic("Functions initialization failed, check the server logs.");
         exit(1);
