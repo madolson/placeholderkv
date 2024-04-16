@@ -1451,8 +1451,8 @@ void luaRegisterServerAPI(lua_State* lua) {
     /* Add default C functions provided in deps/lua codebase to handle basic data types such as table, string etc. */
     luaLoadLibraries(lua);
 
-    /* Before Valkey 7, LUA used to return error messages as strings from pcall function. With Valkey 7, LUA now returns
-     * error messages as tables. To keep backwards compatibility, we wrap the LUA pcall function with our own
+    /* Before Redis OSS 7, Lua used to return error messages as strings from pcall function. With Valkey (or Redis OSS 7), Lua now returns
+     * error messages as tables. To keep backwards compatibility, we wrap the Lua pcall function with our own
      * implementation of C function that converts table to string. */
     lua_pushcfunction(lua,luaRedisPcall);
     lua_setglobal(lua, "pcall");
