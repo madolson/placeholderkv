@@ -8,11 +8,14 @@ on:
     paths:
       - 'src/commands/*.json'
 
+permissions:
+  contents: read
+
 jobs:
   reply-schemas-linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup nodejs
         uses: actions/setup-node@v4
       - name: Install packages

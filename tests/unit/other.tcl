@@ -308,7 +308,7 @@ start_server {tags {"other"}} {
     } {} {needs:reset}
 
     test {RESET clears MONITOR state} {
-        set rd [redis_deferring_client]
+        set rd [valkey_deferring_client]
         $rd monitor
         assert_equal [$rd read] "OK"
 
@@ -353,10 +353,46 @@ start_server {tags {"other"}} {
         assert_error {*unknown command*} {r CONFIG|GET GET_XX}
         assert_error {*unknown subcommand*} {r CONFIG GET_XX}
     }
+
+    test "Extended Redis Compatibility config" {
+        # This config is added in Valkey 8.0, shall be deprecated and have no
+        # effect in 9.x and be deleted in 10.0.
+        set hello [r hello 3]
+        set version [dict get $hello version]
+        if {[string match "10.*" $version]} {
+            # Check that the config doesn't exist anymore.
+            assert_error "ERR Unknown*" {r config set extended-redis-compatibility yes}
+            error "We shall also delete this test case"
+        } elseif {[string match "9.*" $version]} {
+            # This config is scheduled for removal. In 9.x it should still
+            # exists but have no effect.
+            r config set extended-redis-compatibility yes
+            set hello [r hello 3]
+            assert_equal valkey [dict get $hello server]
+            assert_equal $version [dict get $hello version]
+            r config set extended-redis-compatibility no
+        } elseif {[string match "8.*" $version] || ($version eq "255.255.255")} {
+            # In 8.x, the config shall work and affect HELLO server and version.
+            r config set extended-redis-compatibility yes
+            set hello [r hello 3]
+            assert_equal "redis" [dict get $hello server]
+            assert_match "7.2.*" [dict get $hello version]
+            set info [r info server]
+            assert_match "*redis_mode:*" $info
+            assert_no_match "*server_mode:*" $info
+            r config set extended-redis-compatibility no
+            set hello [r hello 3]
+            assert_equal "valkey" [dict get $hello server]
+            assert_equal $version [dict get $hello version]
+            set info [r info server]
+            assert_no_match "*redis_mode:*" $info
+            assert_match "*server_mode:*" $info
+        }
+    }
 }
 
 start_server {tags {"other external:skip"}} {
-    test {Don't rehash if redis has child process} {
+    test {Don't rehash if server has child process} {
         r config set save ""
         r config set rdb-key-save-delay 1000000
 
@@ -419,7 +455,7 @@ start_server {tags {"other external:skip"}} {
             assert_equal $expect_port [lindex $cmdline 3]
             assert_equal $expect_tls_port [lindex $cmdline 4]
             assert_match "*/tests/tmp/server.*/socket" [lindex $cmdline 5]
-            assert_match "*/tests/tmp/redis.conf.*" [lindex $cmdline 6]
+            assert_match "*/tests/tmp/valkey.conf.*" [lindex $cmdline 6]
 
             # Try setting a bad template
             catch {r config set "proc-title-template" "{invalid-var}"} err

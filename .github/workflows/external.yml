@@ -1,10 +1,13 @@
 name: External Server Tests
 
 on:
-    pull_request:
-    push:
-    schedule:
-    - cron: '* * * * *'
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
 
 jobs:
   test-external-standalone:
@@ -12,7 +15,7 @@ jobs:
     if: github.event_name != 'schedule' || github.repository == 'valkey-io/valkey'
     timeout-minutes: 14400
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build
       run: make SERVER_CFLAGS=-Werror
     - name: Start valkey-server
@@ -29,7 +32,7 @@ jobs:
       if: ${{ failure() }}
       uses: actions/upload-artifact@v3
       with:
-        name: test-external-server-log
+        name: test-external-standalone-log
         path: external-server.log
 
   test-external-cluster:
@@ -37,7 +40,7 @@ jobs:
     if: github.event_name != 'schedule' || github.repository == 'valkey-io/valkey'
     timeout-minutes: 14400
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build
       run: make SERVER_CFLAGS=-Werror
     - name: Start valkey-server
@@ -65,7 +68,7 @@ jobs:
     if: github.event_name != 'schedule' || github.repository == 'valkey-io/valkey'
     timeout-minutes: 14400
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: make SERVER_CFLAGS=-Werror
       - name: Start valkey-server
@@ -81,5 +84,5 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
-          name: test-external-server-log
+          name: test-external-nodebug-log
           path: external-server.log

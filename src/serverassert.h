@@ -1,8 +1,8 @@
-/* redisassert.h -- Drop in replacements assert.h that prints the stack trace
- *                  in the Redis logs.
+/* serverassert.h -- Drop in replacements assert.h that prints the stack trace
+ *                  in the server logs.
  *
  * This file should be included instead of "assert.h" inside libraries used by
- * Redis that are using assertions, so instead of Redis disappearing with
+ * the server that are using assertions, so instead of the server disappearing with
  * SIGABORT, we get the details and stack trace inside the log file.
  *
  * ----------------------------------------------------------------------------
@@ -35,13 +35,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __REDIS_ASSERT_H__
-#define __REDIS_ASSERT_H__
+#ifndef VALKEY_ASSERT_H
+#define VALKEY_ASSERT_H
 
 #include "config.h"
 
-#define assert(_e) (likely((_e))?(void)0 : (_serverAssert(#_e,__FILE__,__LINE__),redis_unreachable()))
-#define panic(...) _serverPanic(__FILE__,__LINE__,__VA_ARGS__),redis_unreachable()
+#define assert(_e) (likely((_e))?(void)0 : (_serverAssert(#_e,__FILE__,__LINE__),valkey_unreachable()))
+#define panic(...) _serverPanic(__FILE__,__LINE__,__VA_ARGS__),valkey_unreachable()
 
 void _serverAssert(const char *estr, const char *file, int line);
 void _serverPanic(const char *file, int line, const char *msg, ...);
