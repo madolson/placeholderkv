@@ -648,13 +648,23 @@ NULL
             remaining -= used;
         }
 
-        addReplyStatusFormat(c,
-            "Value at:%p refcount:%d "
-            "encoding:%s serializedlength:%zu "
-            "lru:%d lru_seconds_idle:%llu%s",
-            (void*)val, val->refcount,
-            strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
-            val->lru, estimateObjectIdleTime(val)/1000, extra);
+        if (server.maxmemory_policy & MAXMEMORY_FLAG_LFU) {
+            addReplyStatusFormat(c,
+                                 "Value at:%p refcount:%d "
+                                 "encoding:%s serializedlength:%zu "
+                                 "lfu_freq:%d lfu_access_time_minutes:%u%s",
+                                 (void*)val, val->refcount,
+                                 strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
+                                 val->lru & 255, val->lru >> 8, extra);
+        } else {
+            addReplyStatusFormat(c,
+                                 "Value at:%p refcount:%d "
+                                 "encoding:%s serializedlength:%zu "
+                                 "lru:%d lru_seconds_idle:%llu%s",
+                                 (void*)val, val->refcount,
+                                 strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
+                                 val->lru, estimateObjectIdleTime(val)/1000, extra);
+        }
     } else if (!strcasecmp(c->argv[1]->ptr,"sdslen") && c->argc == 3) {
         dictEntry *de;
         robj *val;
