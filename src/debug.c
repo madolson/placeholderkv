@@ -648,23 +648,24 @@ NULL
             remaining -= used;
         }
 
+        uint8_t lfu_freq = 0;
+        uint32_t lfu_access_time_minutes = 0;
+        uint32_t lru = 0;
+        unsigned long long lru_seconds_idle = 0;
         if (server.maxmemory_policy & MAXMEMORY_FLAG_LFU) {
-            addReplyStatusFormat(c,
-                                 "Value at:%p refcount:%d "
-                                 "encoding:%s serializedlength:%zu "
-                                 "lfu_freq:%d lfu_access_time_minutes:%u%s",
-                                 (void*)val, val->refcount,
-                                 strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
-                                 val->lru & 255, val->lru >> 8, extra);
+            lfu_freq = val->lru & 255;
+            lfu_access_time_minutes = val->lru >> 8;
         } else {
-            addReplyStatusFormat(c,
-                                 "Value at:%p refcount:%d "
-                                 "encoding:%s serializedlength:%zu "
-                                 "lru:%d lru_seconds_idle:%llu%s",
-                                 (void*)val, val->refcount,
-                                 strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
-                                 val->lru, estimateObjectIdleTime(val)/1000, extra);
+            lru = val->lru;
+            lru_seconds_idle = estimateObjectIdleTime(val) / 1000;
         }
+        addReplyStatusFormat(c, "Value at:%p refcount:%d "
+                                "encoding:%s serializedlength:%zu "
+                                "lru:%d lru_seconds_idle:%llu "
+                                "lfu_freq:%d lfu_access_time_minutes:%u%s",
+                             (void *) val, val->refcount,
+                             strenc, rdbSavedObjectLen(val, c->argv[2], c->db->id),
+                             lru, lru_seconds_idle, lfu_freq, lfu_access_time_minutes, extra);
     } else if (!strcasecmp(c->argv[1]->ptr,"sdslen") && c->argc == 3) {
         dictEntry *de;
         robj *val;
