@@ -648,9 +648,7 @@ NULL
             remaining -= used;
         }
 
-        uint8_t lfu_freq = 0;
-        uint32_t lfu_access_time_minutes = 0;
-        uint32_t lru = 0;
+        uint32_t lfu_freq = 0, lfu_access_time_minutes = 0, lru = 0;
         unsigned long long lru_seconds_idle = 0;
         if (server.maxmemory_policy & MAXMEMORY_FLAG_LFU) {
             lfu_freq = val->lru & 255;
