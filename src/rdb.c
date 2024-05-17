@@ -1581,7 +1581,11 @@ int rdbSaveBackground(int req, char *filename, rdbSaveInfo *rsi, int rdbflags) {
         int retval;
 
         /* Child */
-        serverSetProcTitle("redis-rdb-bgsave");
+        if (strstr(server.exec_argv[0],"redis-server") != NULL) {
+            serverSetProcTitle("redis-rdb-bgsave");
+        } else {
+            serverSetProcTitle("valkey-rdb-bgsave");
+        }
         serverSetCpuAffinity(server.bgsave_cpulist);
         retval = rdbSave(req, filename,rsi,rdbflags);
         if (retval == C_OK) {
@@ -1615,8 +1619,8 @@ void rdbRemoveTempFile(pid_t childpid, int from_signal) {
     /* Generate temp rdb file name using async-signal safe functions. */
     ll2string(pid, sizeof(pid), childpid);
     valkey_strlcpy(tmpfile, "temp-", sizeof(tmpfile));
-    redis_strlcat(tmpfile, pid, sizeof(tmpfile));
-    redis_strlcat(tmpfile, ".rdb", sizeof(tmpfile));
+    valkey_strlcat(tmpfile, pid, sizeof(tmpfile));
+    valkey_strlcat(tmpfile, ".rdb", sizeof(tmpfile));
 
     if (from_signal) {
         /* bg_unlink is not async-signal-safe, but in this case we don't really
@@ -3310,7 +3314,7 @@ int rdbLoadRioWithLoadingCtx(rio *rdb, int rdbflags, rdbSaveInfo *rsi, rdbLoadin
                 robj *argv[2];
                 argv[0] = server.lazyfree_lazy_expire ? shared.unlink : shared.del;
                 argv[1] = &keyobj;
-                replicationFeedSlaves(server.slaves,dbid,argv,2);
+                replicationFeedSlaves(dbid,argv,2);
             }
             sdsfree(key);
             decrRefCount(val);
@@ -3596,8 +3600,11 @@ int rdbSaveToSlavesSockets(int req, rdbSaveInfo *rsi) {
         /* Close the reading part, so that if the parent crashes, the child will
          * get a write error and exit. */
         close(server.rdb_pipe_read);
-
-        serverSetProcTitle("redis-rdb-to-slaves");
+        if (strstr(server.exec_argv[0],"redis-server") != NULL) {
+            serverSetProcTitle("redis-rdb-to-slaves");
+        } else {
+            serverSetProcTitle("valkey-rdb-to-replicas");
+        }
         serverSetCpuAffinity(server.bgsave_cpulist);
 
         retval = rdbSaveRioWithEOFMark(req,&rdb,NULL,rsi);

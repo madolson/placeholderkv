@@ -616,7 +616,7 @@ int anetUnixServer(char *err, char *path, mode_t perm, int backlog)
     }
 
     int type = SOCK_STREAM;
-    int flags = ANET_SOCKET_CLOEXEC | ANET_SOCKET_NONBLOCK | ANET_SOCKET_REUSEADDR;
+    int flags = ANET_SOCKET_CLOEXEC | ANET_SOCKET_NONBLOCK;
     if ((s = anetCreateSocket(err,AF_LOCAL,type,0,flags)) == ANET_ERR)
         return ANET_ERR;
 
@@ -745,7 +745,7 @@ error:
  * and one of the use cases is O_CLOEXEC|O_NONBLOCK. */
 int anetPipe(int fds[2], int read_flags, int write_flags) {
     int pipe_flags = 0;
-#if defined(__linux__) || defined(__FreeBSD__)
+#ifdef HAVE_PIPE2
     /* When possible, try to leverage pipe2() to apply flags that are common to both ends.
      * There is no harm to set O_CLOEXEC to prevent fd leaks. */
     pipe_flags = O_CLOEXEC | (read_flags & write_flags);

@@ -5,23 +5,17 @@
 # 4. migration is half finished on "migrating" node
 # 5. migration is half finished on "importing" node
 
-# TODO: Test is currently disabled until it is stabilized (fixing the test
-# itself or real issues in the server).
+source tests/support/cluster_util.tcl
 
-if {false} {
-source "../tests/includes/init-tests.tcl"
-source "../tests/includes/utils.tcl"
+start_cluster 2 0 {tags {external:skip cluster}} {
 
-test "Create a 2 nodes cluster" {
-    create_cluster 2 0
-    config_set_all_nodes cluster-allow-replica-migration no
-}
+config_set_all_nodes cluster-allow-replica-migration no
 
 test "Cluster is up" {
-    assert_cluster_state ok
+    wait_for_cluster_state ok
 }
 
-set cluster [valkey_cluster 127.0.0.1:[get_instance_attrib valkey 0 port]]
+set cluster [valkey_cluster 127.0.0.1:[srv 0 port]]
 catch {unset nodefrom}
 catch {unset nodeto}
 
@@ -95,4 +89,5 @@ test "Half-finish importing" {
 }
 
 config_set_all_nodes cluster-allow-replica-migration yes
-}
+
+} ;# start_cluster

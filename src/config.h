@@ -42,7 +42,7 @@
 #include <fcntl.h>
 #endif
 
-#if defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
+#if defined(__APPLE__) && defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
 #define MAC_OS_10_6_DETECTED
 #endif
 
@@ -106,7 +106,21 @@
 #define HAVE_ACCEPT4 1
 #endif
 
-#if (defined(__APPLE__) && defined(MAC_OS_10_6_DETECTED)) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined (__NetBSD__)
+/* Detect for pipe2() */
+#if defined(__linux__) || \
+    defined(__FreeBSD__) || \
+    defined(OpenBSD5_7) || \
+    (defined(__DragonFly__) && __DragonFly_version >= 400106) || \
+    (defined(__NetBSD__) && (defined(NetBSD6_0) || __NetBSD_Version__ >= 600000000))
+#define HAVE_PIPE2 1
+#endif
+
+/* Detect for kqueue */
+#if (defined(__APPLE__) && defined(MAC_OS_10_6_DETECTED)) || \
+    defined(__DragonFly__) || \
+    defined(__FreeBSD__) || \
+    defined(__OpenBSD__) || \
+    defined (__NetBSD__)
 #define HAVE_KQUEUE 1
 #endif
 
@@ -217,12 +231,13 @@ void setproctitle(const char *fmt, ...);
 
 #if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
     defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
-    defined(MIPSEB) || defined(_MIPSEB) || defined(_IBMR2) || defined(DGUX) ||\
+    defined(MIPSEB) || defined(_MIPSEB) || defined(_IBMR2) || defined(DGUX) || \
     defined(apollo) || defined(__convex__) || defined(_CRAY) || \
     defined(__hppa) || defined(__hp9000) || \
     defined(__hp9000s300) || defined(__hp9000s700) || \
-    defined (BIT_ZERO_ON_LEFT) || defined(m68k) || defined(__sparc)
-#define BYTE_ORDER	BIG_ENDIAN
+    defined (BIT_ZERO_ON_LEFT) || defined(m68k) || defined(__sparc) || \
+    (defined(__APPLE__) && defined(__POWERPC__))
+#define BYTE_ORDER    BIG_ENDIAN
 #endif
 #endif /* linux */
 #endif /* BSD */
@@ -304,7 +319,7 @@ void setproctitle(const char *fmt, ...);
 #include <kernel/OS.h>
 #define valkey_set_thread_title(name) rename_thread(find_thread(0), name)
 #else
-#if (defined __APPLE__ && defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 1070)
+#if (defined __APPLE__ && defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED >= 1070)
 int pthread_setname_np(const char *name);
 #include <pthread.h>
 #define valkey_set_thread_title(name) pthread_setname_np(name)
