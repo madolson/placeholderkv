@@ -427,6 +427,7 @@ extern int configOOMScoreAdjValuesDefaults[CONFIG_OOM_COUNT];
 #define CLIENT_MODULE_PREVENT_REPL_PROP (1ULL << 49) /* Module client do not want to propagate to replica */
 #define CLIENT_REPROCESSING_COMMAND (1ULL << 50)     /* The client is re-processing the command. */
 #define CLIENT_PREREPL_DONE (1ULL << 51)             /* Indicate that pre-replication has been done on the client */
+#define CLIENT_PENDING_IO_URING_WRITE (1ULL << 52)   /* Client has output to send using io_uring. */
 
 /* Client block type (btype field in client structure)
  * if CLIENT_BLOCKED flag is set. */
@@ -1321,6 +1322,7 @@ typedef struct client {
     int bufpos;
     size_t buf_usable_size; /* Usable size of buffer. */
     char *buf;
+    ssize_t nwritten; /* How many bytes server write to client. */
 #ifdef LOG_REQ_RES
     clientReqResInfo reqres;
 #endif
@@ -2120,6 +2122,9 @@ struct valkeyServer {
     int reply_buffer_resizing_enabled; /* Is reply buffer resizing enabled (1 by default) */
     /* Local environment */
     char *locale_collate;
+    /* io_uring */
+    int io_uring_enabled; /* If io_uring enabled (0 by default) */
+    struct io_uring *io_uring;
 };
 
 #define MAX_KEYS_BUFFER 256
