@@ -364,5 +364,5 @@ struct clusterState {
     unsigned char owner_not_claiming_slot[CLUSTER_SLOTS / 8];
 };
 
-
+unsigned int delKeysInSlot(unsigned int hashslot);
 #endif // CLUSTER_LEGACY_H

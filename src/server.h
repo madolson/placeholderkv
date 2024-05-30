@@ -1814,8 +1814,6 @@ struct valkeyServer {
                                                  invocation of the event loop. */
     unsigned int max_new_conns_per_cycle;     /* The maximum number of tcp connections that will be accepted during each
                                                  invocation of the event loop. */
-    long long stat_persistence_startup_load_keys_deleted;
-    long long stat_persistence_startup_load_unowned_slots;
     /* AOF persistence */
     int aof_enabled;                    /* AOF configuration */
     int aof_state;                      /* AOF_(ON|OFF|WAIT_REWRITE) */
@@ -3537,12 +3535,8 @@ unsigned long LFUDecrAndReturn(robj *o);
 int performEvictions(void);
 void startEvictionTimeProc(void);
 
-typedef struct {
-    unsigned int unowned_slots;
-    unsigned int deleted_keys;
-} del_stat;
 /* delete unowned keys from database at server start up after loading persistence files. */
-del_stat delUnOwnedKeys(void);
+void delUnOwnedKeys(void);
 
 /* Keys hashing / comparison functions for dict.c hash tables. */
 uint64_t dictSdsHash(const void *key);

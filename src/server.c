@@ -2656,8 +2656,6 @@ void initServer(void) {
     server.rdb_save_time_start = -1;
     server.rdb_last_load_keys_expired = 0;
     server.rdb_last_load_keys_loaded = 0;
-    server.stat_persistence_startup_load_keys_deleted = 0;
-    server.stat_persistence_startup_load_unowned_slots = 0;
     server.dirty = 0;
     resetServerStats();
     /* A few stats we don't want to reset: server startup time, and peak mem. */
@@ -5584,9 +5582,7 @@ sds genValkeyInfoString(dict *section_dict, int all_sections, int everything) {
                                              aof_bio_fsync_status == C_OK) ? "ok" : "err",
             "aof_last_cow_size:%zu\r\n", server.stat_aof_cow_bytes,
             "module_fork_in_progress:%d\r\n", server.child_type == CHILD_TYPE_MODULE,
-            "module_fork_last_cow_size:%zu\r\n", server.stat_module_cow_bytes,
-            "total_startup_load_deleted_keys:%lld\r\n", server.stat_persistence_startup_load_keys_deleted,
-            "total_startup_load_unowned_slots:%lld\r\n", server.stat_persistence_startup_load_unowned_slots));
+            "module_fork_last_cow_size:%zu\r\n", server.stat_module_cow_bytes));
         /* clang-format on */
 
         if (server.aof_enabled) {
@@ -6945,15 +6941,12 @@ int main(int argc, char **argv) {
         serverLog(LL_NOTICE, "Server initialized");
         aofLoadManifestFromDisk();
         loadDataFromDisk();
-        del_stat stat = delUnOwnedKeys();
-        server.stat_persistence_startup_load_keys_deleted = stat.deleted_keys;
-        server.stat_persistence_startup_load_unowned_slots = stat.unowned_slots;
         aofOpenIfNeededOnServerStart();
         aofDelHistoryFiles();
         if (server.cluster_enabled) {
             serverAssert(verifyClusterConfigWithData() == C_OK);
         }
-
+        delUnOwnedKeys();
         for (j = 0; j < CONN_TYPE_MAX; j++) {
             connListener *listener = &server.listeners[j];
             if (listener->ct == NULL) continue;
