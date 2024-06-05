@@ -986,7 +986,6 @@ void rewriteConfigSentinelOption(struct rewriteConfigState *state);
 dictType optionToLineDictType = {
     dictSdsCaseHash,       /* hash function */
     NULL,                  /* key dup */
-    NULL,                  /* val dup */
     dictSdsKeyCaseCompare, /* key compare */
     dictSdsDestructor,     /* key destructor */
     dictListDestructor,    /* val destructor */
@@ -996,7 +995,6 @@ dictType optionToLineDictType = {
 dictType optionSetDictType = {
     dictSdsCaseHash,       /* hash function */
     NULL,                  /* key dup */
-    NULL,                  /* val dup */
     dictSdsKeyCaseCompare, /* key compare */
     dictSdsDestructor,     /* key destructor */
     NULL,                  /* val destructor */
@@ -3054,6 +3052,7 @@ standardConfig static_configs[] = {
     createBoolConfig("aof-disable-auto-gc", NULL, MODIFIABLE_CONFIG | HIDDEN_CONFIG, server.aof_disable_auto_gc, 0, NULL, updateAofAutoGCEnabled),
     createBoolConfig("replica-ignore-disk-write-errors", NULL, MODIFIABLE_CONFIG, server.repl_ignore_disk_write_error, 0, NULL, NULL),
     createBoolConfig("extended-redis-compatibility", NULL, MODIFIABLE_CONFIG, server.extended_redis_compat, 0, NULL, updateExtendedRedisCompat),
+    createBoolConfig("enable-debug-assert", NULL, IMMUTABLE_CONFIG | HIDDEN_CONFIG, server.enable_debug_assert, 0, NULL, NULL),
     createBoolConfig("io_uring", NULL, DEBUG_CONFIG | IMMUTABLE_CONFIG, server.io_uring_enabled, 1, NULL, NULL),
 
     /* String Configs */
@@ -3193,6 +3192,7 @@ standardConfig static_configs[] = {
     createOffTConfig("auto-aof-rewrite-min-size", NULL, MODIFIABLE_CONFIG, 0, LLONG_MAX, server.aof_rewrite_min_size, 64 * 1024 * 1024, MEMORY_CONFIG, NULL, NULL),
     createOffTConfig("loading-process-events-interval-bytes", NULL, MODIFIABLE_CONFIG | HIDDEN_CONFIG, 1024, INT_MAX, server.loading_process_events_interval_bytes, 1024 * 1024 * 2, INTEGER_CONFIG, NULL, NULL),
 
+    /* Tls configs */
     createIntConfig("tls-port", NULL, MODIFIABLE_CONFIG, 0, 65535, server.tls_port, 0, INTEGER_CONFIG, NULL, applyTLSPort), /* TCP port. */
     createIntConfig("tls-session-cache-size", NULL, MODIFIABLE_CONFIG, 0, INT_MAX, server.tls_ctx_config.session_cache_size, 20 * 1024, INTEGER_CONFIG, NULL, applyTlsCfg),
     createIntConfig("tls-session-cache-timeout", NULL, MODIFIABLE_CONFIG, 0, INT_MAX, server.tls_ctx_config.session_cache_timeout, 300, INTEGER_CONFIG, NULL, applyTlsCfg),

@@ -702,13 +702,12 @@ typedef enum {
 #define serverAssert(_e) (likely(_e) ? (void)0 : (_serverAssert(#_e, __FILE__, __LINE__), valkey_unreachable()))
 #define serverPanic(...) _serverPanic(__FILE__, __LINE__, __VA_ARGS__), valkey_unreachable()
 
-/* The following macros provide assertions that are only executed during test builds and should be used to add
- * assertions that are too computationally expensive or dangerous to run during normal operations.  */
-#ifdef DEBUG_ASSERTIONS
-#define debugServerAssertWithInfo(...) serverAssertWithInfo(__VA_ARGS__)
-#else
-#define debugServerAssertWithInfo(...)
-#endif
+/* The following macros provide a conditional assertion that is only executed
+ * when the server config 'enable-debug-assert' is true. This is useful for adding
+ * assertions that are too computationally expensive or risky to run in normal
+ * operation, but are valuable for debugging or testing. */
+#define debugServerAssert(...) (server.enable_debug_assert ? serverAssert(__VA_ARGS__) : (void)0)
+#define debugServerAssertWithInfo(...) (server.enable_debug_assert ? serverAssertWithInfo(__VA_ARGS__) : (void)0)
 
 /* latency histogram per command init settings */
 #define LATENCY_HISTOGRAM_MIN_VALUE 1L          /* >= 1 nanosec */
@@ -1682,6 +1681,7 @@ struct valkeyServer {
     int enable_protected_configs; /* Enable the modification of protected configs, see PROTECTED_ACTION_ALLOWED_* */
     int enable_debug_cmd;         /* Enable DEBUG commands, see PROTECTED_ACTION_ALLOWED_* */
     int enable_module_cmd;        /* Enable MODULE commands, see PROTECTED_ACTION_ALLOWED_* */
+    int enable_debug_assert;      /* Enable debug asserts */
 
     /* RDB / AOF loading information */
     volatile sig_atomic_t loading;       /* We are loading data from disk if true */
@@ -2861,6 +2861,9 @@ int collateStringObjects(const robj *a, const robj *b);
 int equalStringObjects(robj *a, robj *b);
 unsigned long long estimateObjectIdleTime(robj *o);
 void trimStringObjectIfNeeded(robj *o, int trim_small_values);
+static inline int canUseSharedObject(void) {
+    return server.maxmemory == 0 || !(server.maxmemory_policy & MAXMEMORY_FLAG_NO_SHARED_INTEGERS);
+}
 #define sdsEncodedObject(objptr) (objptr->encoding == OBJ_ENCODING_RAW || objptr->encoding == OBJ_ENCODING_EMBSTR)
 
 /* Synchronous I/O with timeout */
