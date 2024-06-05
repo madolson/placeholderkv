@@ -2047,8 +2047,9 @@ int handleClientsWithPendingWrites(void) {
             continue;
         }
 
-        /* We can use io_uring to write to client to reduce the count of syscall. */
-        if (useIOUring(c)) {
+        /* If user turn on io_uring and system support it, give io_uring a chance.
+         * We can use io_uring to batch submit to reduce the count of syscall. */
+        if (writeUsingIOUring(c)) {
             if (writeToClientUsingIOUring(c) == C_ERR) {
                 listUnlinkNode(server.clients_pending_write, ln);
                 continue;

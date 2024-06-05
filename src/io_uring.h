@@ -7,9 +7,9 @@
 void initIOUring(void);
 
 /* If the client is suitable to use io_uring handle the write request. */
-int useIOUring(client *c);
+int writeUsingIOUring(client *c);
 
-/* Use io_uring to handle the client request, it is always used together with useIOUring(). */
+/* Use io_uring to handle the client request, it is always used together with writeUsingIOUring(). */
 int writeToClientUsingIOUring(client *c);
 
 /* Submit requests to the submission queue and wait for completion. */

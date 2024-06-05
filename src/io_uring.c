@@ -3,7 +3,7 @@
 #ifdef HAVE_LIBURING
 #include <liburing.h>
 
-/* io_uring instance queue depth */
+/* io_uring instance queue depth. */
 #define IO_URING_DEPTH 256
 
 static size_t io_uring_queue_len = 0;
@@ -29,7 +29,7 @@ void initIOUring(void) {
     }
 }
 
-int useIOUring(client *c) {
+int writeUsingIOUring(client *c) {
     if (server.io_uring_enabled && server.io_uring) {
         /* Currently, we only use io_uring to handle the static buffer write requests. */
         return getClientType(c) != CLIENT_TYPE_SLAVE && listLength(c->reply) == 0 && c->bufpos > 0;
@@ -48,9 +48,9 @@ int writeToClientUsingIOUring(client *c) {
 }
 
 /* Submit requests to the submission queue and wait for completion. */
-static inline void ioUringSubmitAndWait(void) {
-    /* wait for all submitted queue entries complete. */
+static inline void ioUringSubmitAndWaitBarrier(void) {
     io_uring_submit(server.io_uring);
+    /* Wait for all submitted queue entries complete. */
     while (io_uring_queue_len) {
         struct io_uring_cqe *cqe;
         if (io_uring_wait_cqe(server.io_uring, &cqe) == 0) {
@@ -58,6 +58,8 @@ static inline void ioUringSubmitAndWait(void) {
             c->nwritten = cqe->res;
             io_uring_cqe_seen(server.io_uring, cqe);
             io_uring_queue_len--;
+        } else {
+            serverPanic("Error waiting io_uring completion queue.");
         }
     }
 }
@@ -90,6 +92,8 @@ int checkPendingIOUringWriteState(client *c) {
         c->sentlen = 0;
     }
     atomic_fetch_add_explicit(&server.stat_net_output_bytes, c->nwritten, memory_order_relaxed);
+    c->net_output_bytes += c->nwritten;
+
     /* For clients representing masters we don't count sending data
      * as an interaction, since we always send REPLCONF ACK commands
      * that take some time to just fill the socket output buffer.
@@ -101,7 +105,7 @@ int checkPendingIOUringWriteState(client *c) {
 
 void submitAndWaitIOUringComplete() {
     if (server.io_uring_enabled && server.io_uring && listLength(server.clients_pending_write) > 0) {
-        ioUringSubmitAndWait();
+        ioUringSubmitAndWaitBarrier();
         listIter li;
         listNode *ln;
         /* An optimization for connWrite: batch submit the write(3). */
@@ -139,7 +143,7 @@ void freeIOUring(void) {
 void initIOUring(void) {
 }
 
-int useIOUring(client *c) {
+int writeUsingIOUring(client *c) {
     UNUSED(c);
     return 0;
 }
