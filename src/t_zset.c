@@ -2534,7 +2534,7 @@ dictType setAccumulatorDictType = {
     NULL               /* allow to expand */
 };
 
-#define DUPLICATE_OPTION_WEIGHTS   1 << 1
+#define DUPLICATE_OPTION_WEIGHTS 1 << 1
 #define DUPLICATE_OPTION_AGGREGATE 1 << 2
 
 /* The zunionInterDiffGenericCommand() function is called in order to implement the
