@@ -2534,6 +2534,9 @@ dictType setAccumulatorDictType = {
     NULL               /* allow to expand */
 };
 
+#define DUPLICATE_OPTION_WEIGHTS   1<<1
+#define DUPLICATE_OPTION_AGGREGATE 1<<2
+
 /* The zunionInterDiffGenericCommand() function is called in order to implement the
  * following commands: ZUNION, ZINTER, ZDIFF, ZUNIONSTORE, ZINTERSTORE, ZDIFFSTORE,
  * ZINTERCARD.
@@ -2560,6 +2563,7 @@ void zunionInterDiffGenericCommand(client *c, robj *dstkey, int numkeysIndex, in
     int withscores = 0;
     unsigned long cardinality = 0;
     long limit = 0; /* Stop searching after reaching the limit. 0 means unlimited. */
+    u_int8_t dupCommandOptionFlag = 0;
 
     /* expect setnum input keys to be given */
     if ((getLongFromObjectOrReply(c, c->argv[numkeysIndex], &setnum, NULL) != C_OK)) return;
@@ -2610,6 +2614,12 @@ void zunionInterDiffGenericCommand(client *c, robj *dstkey, int numkeysIndex, in
         while (remaining) {
             if (op != SET_OP_DIFF && !cardinality_only && remaining >= (setnum + 1) &&
                 !strcasecmp(c->argv[j]->ptr, "weights")) {
+                if (dupCommandOptionFlag & DUPLICATE_OPTION_WEIGHTS) {
+                    addReplyError(c, "syntax error, multiple weights option is not allowed");
+                    zfree(src);
+                    return;
+                }
+                dupCommandOptionFlag |= DUPLICATE_OPTION_WEIGHTS;
                 j++;
                 remaining--;
                 for (i = 0; i < setnum; i++, j++, remaining--) {
@@ -2621,6 +2631,12 @@ void zunionInterDiffGenericCommand(client *c, robj *dstkey, int numkeysIndex, in
                 }
             } else if (op != SET_OP_DIFF && !cardinality_only && remaining >= 2 &&
                        !strcasecmp(c->argv[j]->ptr, "aggregate")) {
+                if (dupCommandOptionFlag & DUPLICATE_OPTION_AGGREGATE) {
+                    addReplyError(c, "syntax error, multiple aggregate option is not allowed");
+                    zfree(src);
+                    return;
+                }
+                dupCommandOptionFlag |= DUPLICATE_OPTION_AGGREGATE;
                 j++;
                 remaining--;
                 if (!strcasecmp(c->argv[j]->ptr, "sum")) {
@@ -2639,6 +2655,11 @@ void zunionInterDiffGenericCommand(client *c, robj *dstkey, int numkeysIndex, in
             } else if (remaining >= 1 && !dstkey && !cardinality_only && !strcasecmp(c->argv[j]->ptr, "withscores")) {
                 j++;
                 remaining--;
+                if (withscores) {
+                    addReplyError(c, "syntax error, multiple withscores option is not allowed");
+                    zfree(src);
+                    return;
+                }
                 withscores = 1;
             } else if (cardinality_only && remaining >= 2 && !strcasecmp(c->argv[j]->ptr, "limit")) {
                 j++;
