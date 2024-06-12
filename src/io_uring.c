@@ -29,10 +29,10 @@ void initIOUring(void) {
     }
 }
 
-int writeUsingIOUring(client *c) {
+int canWriteUsingIOUring(client *c) {
     if (server.io_uring_enabled && server.io_uring) {
         /* Currently, we only use io_uring to handle the static buffer write requests. */
-        return getClientType(c) != CLIENT_TYPE_SLAVE && listLength(c->reply) == 0 && c->bufpos > 0;
+        return getClientType(c) != CLIENT_TYPE_REPLICA && listLength(c->reply) == 0 && c->bufpos > 0;
     }
     return 0;
 }
@@ -98,7 +98,7 @@ int checkPendingIOUringWriteState(client *c) {
      * as an interaction, since we always send REPLCONF ACK commands
      * that take some time to just fill the socket output buffer.
      * We just rely on data / pings received for timeout detection. */
-    if (!(c->flags & CLIENT_MASTER)) c->lastinteraction = server.unixtime;
+    if (!(c->flags & CLIENT_TYPE_PRIMARY)) c->last_interaction = server.unixtime;
 
     return C_OK;
 }
@@ -143,7 +143,7 @@ void freeIOUring(void) {
 void initIOUring(void) {
 }
 
-int writeUsingIOUring(client *c) {
+int canWriteUsingIOUring(client *c) {
     UNUSED(c);
     return 0;
 }
