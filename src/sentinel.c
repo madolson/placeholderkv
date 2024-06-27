@@ -241,10 +241,9 @@ typedef struct sentinelValkeyInstance {
     uint64_t failover_epoch; /* Epoch of the currently started failover. */
     int failover_state;      /* See SENTINEL_FAILOVER_STATE_* defines. */
     mstime_t failover_state_change_time;
-    mstime_t failover_start_time;                   /* Last failover attempt start time. */
-    mstime_t failover_timeout;                      /* Max time to refresh failover state. */
-    mstime_t failover_delay_logged;                 /* For what failover_start_time value we
-                                                       logged the failover delay. */
+    mstime_t failover_start_time;   /* Last failover attempt start time. */
+    mstime_t failover_timeout;      /* Max time to refresh failover state. */
+    mstime_t failover_delay_logged; /* For what failover_start_time value we ogged the failover delay. */
     struct sentinelValkeyInstance *promoted_replica; /* Promoted replica instance. */
     /* Scripts executed to notify admin or reconfigure clients: when they
      * are set to NULL no script is executed. */
