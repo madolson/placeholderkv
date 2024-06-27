@@ -173,7 +173,7 @@ To manually run a Valkey server with RDMA mode:
 
 It's possible to change bind address/port of RDMA by runtime command:
 
-    10.2.16.101:6379> CONFIG SET rdma-port 6380
+    192.168.122.100:6379> CONFIG SET rdma.port 6380
 
 It's also possible to have both RDMA and TCP available, and there is no
 conflict of TCP(6379) and RDMA(6379), Ex:
