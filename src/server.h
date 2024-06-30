@@ -429,6 +429,9 @@ extern int configOOMScoreAdjValuesDefaults[CONFIG_OOM_COUNT];
 #define CLIENT_REPLICATION_DONE (1ULL << 51)         /* Indicate that replication has been done on the client */
 #define CLIENT_AUTHENTICATED (1ULL << 52)            /* Indicate a client has successfully authenticated */
 
+/* Client capabilities */
+#define CLIENT_CAPA_REDIRECT (1 << 0) /* Indicate that the client can handle redirection */
+
 /* Client block type (btype field in client structure)
  * if CLIENT_BLOCKED flag is set. */
 typedef enum blocking_type {
@@ -1205,6 +1208,7 @@ typedef struct client {
     uint64_t flags; /* Client flags: CLIENT_* macros. */
     connection *conn;
     int resp;                            /* RESP protocol version. Can be 2 or 3. */
+    uint32_t capa;                       /* Client capabilities: CLIENT_CAPA* macros. */
     serverDb *db;                        /* Pointer to currently SELECTed DB. */
     robj *name;                          /* As set by CLIENT SETNAME. */
     robj *lib_name;                      /* The client library name as set by CLIENT SETINFO. */
@@ -2071,7 +2075,7 @@ struct valkeyServer {
                                                             * dropping packets of a specific type */
     /* Debug config that goes along with cluster_drop_packet_filter. When set, the link is closed on packet drop. */
     uint32_t debug_cluster_close_link_on_packet_drop : 1;
-    sds cached_cluster_slot_info[CACHE_CONN_TYPE_MAX];
+    sds cached_cluster_slot_info[CACHE_CONN_TYPE_MAX][4]; /* Align to RESP3 */
     /* Scripting */
     mstime_t busy_reply_threshold;  /* Script / module timeout in milliseconds */
     int pre_command_oom_state;      /* OOM before command (script?) was started */
@@ -2121,6 +2125,7 @@ struct valkeyServer {
                                                 is down, doesn't affect pubsub global. */
     long reply_buffer_peak_reset_time; /* The amount of time (in milliseconds) to wait between reply buffer peak resets */
     int reply_buffer_resizing_enabled; /* Is reply buffer resizing enabled (1 by default) */
+    sds availability_zone; /* When run in a cloud environment we can configure the availability zone it is running in */
     /* Local environment */
     char *locale_collate;
 };
@@ -2667,7 +2672,6 @@ void addReplyErrorArity(client *c);
 void addReplyErrorExpireTime(client *c);
 void addReplyStatus(client *c, const char *status);
 void addReplyDouble(client *c, double d);
-void addReplyLongLongWithPrefix(client *c, long long ll, char prefix);
 void addReplyBigNum(client *c, const char *num, size_t len);
 void addReplyHumanLongDouble(client *c, long double d);
 void addReplyLongLong(client *c, long long ll);
@@ -2734,7 +2738,7 @@ void initSharedQueryBuf(void);
 client *lookupClientByID(uint64_t id);
 int authRequired(client *c);
 void putClientInPendingWriteQueue(client *c);
-client *createCachedResponseClient(void);
+client *createCachedResponseClient(int resp);
 void deleteCachedResponseClient(client *recording_client);
 
 /* logreqres.c - logging of requests and responses */
@@ -3746,6 +3750,7 @@ void sunsubscribeCommand(client *c);
 void watchCommand(client *c);
 void unwatchCommand(client *c);
 void clusterCommand(client *c);
+void clusterSlotStatsCommand(client *c);
 void restoreCommand(client *c);
 void migrateCommand(client *c);
 void askingCommand(client *c);
