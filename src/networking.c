@@ -543,10 +543,14 @@ void afterErrorReply(client *c, const char *s, size_t len, int flags) {
     if (!(flags & ERR_REPLY_FLAG_NO_STATS_UPDATE)) {
         /* Increment the global error counter */
         server.stat_total_error_replies++;
-        /* Increment the error stats
-         * If the string already starts with "-..." then the error prefix
-         * is provided by the caller ( we limit the search to 32 chars). Otherwise we use "-ERR". */
-        if (s[0] != '-') {
+        /* Increment the error stats */
+        /* After the errors RAX reaches this limit, instead of tracking
+         * custom LUA errors, we track the error under `error_LUA` */
+        if (flags & ERR_REPLY_FLAG_LUA && raxSize(server.errors) >= ERROR_STATS_LUA_LIMIT) {
+            incrementErrorCount(LUA_ERRORSTATS_OVERFLOW_ERR, strlen(LUA_ERRORSTATS_OVERFLOW_ERR));
+        } else if (s[0] != '-') {
+            /* If the string already starts with "-..." then the error prefix
+             * is provided by the caller ( we limit the search to 32 chars). Otherwise we use "-ERR". */
             incrementErrorCount("ERR", 3);
         } else {
             char *spaceloc = memchr(s, ' ', len < 32 ? len : 32);
