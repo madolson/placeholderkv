@@ -4789,6 +4789,11 @@ void clusterCron(void) {
                     serverLog(LL_DEBUG,"*** NODE %.40s possibly failing", node->name);
                 }
             }
+            if (nodeIsMaster(myself) && server.cluster->size == 1) {
+                markNodeAsFailingIfNeeded(node);
+            } else {
+                serverLog(LL_DEBUG,"*** NODE %.40s possibly failing", node->name);
+            }
         }
     }
     dictReleaseIterator(di);
