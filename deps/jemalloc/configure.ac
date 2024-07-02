@@ -546,7 +546,7 @@ CTARGET='-o $@'
 LDTARGET='-o $@'
 TEST_LD_MODE=
 EXTRA_LDFLAGS=
-ARFLAGS='crs'
+ARFLAGS='crus'
 AROUT=' $@'
 CC_MM=1
 
