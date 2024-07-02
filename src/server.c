@@ -6937,7 +6937,7 @@ int main(int argc, char **argv) {
         if (server.cluster_enabled) {
             serverAssert(verifyClusterConfigWithData() == C_OK);
         }
-
+        delUnOwnedKeys();
         for (j = 0; j < CONN_TYPE_MAX; j++) {
             connListener *listener = &server.listeners[j];
             if (listener->ct == NULL) continue;

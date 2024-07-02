@@ -35,6 +35,7 @@
 
 #include "server.h"
 #include "cluster.h"
+#include "cluster_legacy.h"
 
 #include <ctype.h>
 
@@ -105,6 +106,33 @@ ConnectionType *connTypeOfCluster(void) {
     }
 
     return connectionTypeTcp();
+}
+
+void delUnOwnedKeys(void) {
+    if (!server.cluster_enabled) {
+        return;
+    }
+    unsigned int deleted_keys = 0;
+    unsigned int unowned_slots = 0;
+    clusterNode *master;
+    if (clusterNodeIsMaster(server.cluster->myself)) {
+        master = server.cluster->myself;
+    } else {
+        master = server.cluster->myself->slaveof;
+    }
+    for (int i = 0; i < CLUSTER_SLOTS; i++) {
+        if (server.cluster->slots[i] != master) {
+            unsigned int deleted = delKeysInSlot(i);
+            deleted_keys += deleted;
+            if (deleted > 0) {
+                unowned_slots++;
+                serverLog(LL_NOTICE, "Deleted %u keys from unowned slot: %d after loading RDB", deleted, i);
+            }
+        }
+    }
+    serverLog(LL_NOTICE, "Deleted totoal: %d unowned keys from total: %d unowned slots after loading RDB",
+              deleted_keys, unowned_slots);
+    return;
 }
 
 /* -----------------------------------------------------------------------------
